@@ -5,9 +5,15 @@ import json
 from datetime import datetime
 from typing import Dict, List, Optional
 
+import os
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
+
+# CORS settings for production
+cors_origins = ["*"] if os.environ.get('FLASK_ENV') == 'development' else ["https://tictac.johancv.com", "https://johancv.com"]
+
+socketio = SocketIO(app, cors_allowed_origins=cors_origins)
 
 # Game data structures
 game_sessions: Dict[str, dict] = {}
@@ -455,5 +461,12 @@ def handle_restart_game():
     # Broadcast session list update to all connected clients
     broadcast_session_list_update()
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker"""
+    return {'status': 'healthy', 'active_sessions': len(game_sessions)}, 200
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000) 
+    # Production vs Development settings
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    socketio.run(app, debug=debug_mode, host='0.0.0.0', port=5000) 

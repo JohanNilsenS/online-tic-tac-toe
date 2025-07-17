@@ -8,7 +8,12 @@ class SocketService {
   connect() {
     if (this.socket) return;
 
-    this.socket = io('http://localhost:5000', {
+    // Use different URLs for development and production
+    const socketUrl = import.meta.env.PROD 
+      ? window.location.origin  // Production: same domain
+      : 'http://localhost:5000'; // Development: backend port
+
+    this.socket = io(socketUrl, {
       autoConnect: true,
     });
 
